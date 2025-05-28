@@ -1,0 +1,43 @@
+{
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "handler": "serve_static_file",
+      "handler_args": {
+        "filepath": "index.html"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/style.css",
+      "handler": "serve_static_file",
+      "handler_args": {
+        "filepath": "style.css"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/script.js",
+      "handler": "serve_static_file",
+      "handler_args": {
+        "filepath": "script.js"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/data",
+      "handler": "get_data"
+    },
+    {
+      "method": "POST",
+      "path": "/api/data",
+      "handler": "post_data"
+    },
+    {
+      "method": "POST", 
+      "path": "/api/login",
+      "handler": "login_handler"
+    }
+  ]
+}
