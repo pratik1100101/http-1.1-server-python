@@ -32,8 +32,8 @@ def main():
     # Initialize the WebServer.
     server = WebServer(HOST, PORT, WEB_ROOT_DIR, router)
     # Add the middleware, order matters here auth first and then logger
-    server.add_middleware(auth_middleware)
     server.add_middleware(logger_middleware)
+    server.add_middleware(auth_middleware)
     # Load routes after middleware is added
     # Add here if you are applying the programmatic routing logic and remove load_routes
     load_routes(router)

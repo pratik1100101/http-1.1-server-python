@@ -2,7 +2,6 @@ import json
 from typing import Tuple
 from utils.auth_utils import check_password, create_jwt_token
 from webserver import Request
-from database.tables import UserTable
 
 # Important, it ensures we will only have one instance of UserTable
 from database.db import user_table
