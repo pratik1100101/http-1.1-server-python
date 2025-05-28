@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 from dotenv import load_dotenv
 import sqlalchemy as sa
@@ -23,6 +24,7 @@ Base = so.declarative_base()
 SessionLocal = so.sessionmaker(autoflush=False, bind=db)
 
 
+@contextmanager
 def start_db():
     # Create a new session from the session facttory I mentioned above.
     session = SessionLocal()
