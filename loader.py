@@ -1,9 +1,7 @@
 import importlib
 import json
 import os
-from database.tables import UserTable
 from router import Router
-from utils.auth_utils import hash_password
 
 
 def load_routes(router: Router) -> None:
@@ -80,32 +78,3 @@ def load_routes(router: Router) -> None:
         router.add_route(method, path, handler, handler_args)
 
     print(f"Routes loaded from {routes_config_path}")
-
-
-def load_users(user_table: UserTable):
-
-    users_config_path = os.path.join("config", "users.json")
-
-    if os.path.exists(users_config_path):
-
-        with open(users_config_path, "r") as f:
-            users_data = json.load(f)
-
-        for user_info in users_data:
-            username = user_info["username"]
-            password = user_info["password"]  # This is plaintext from config
-            role = user_info["role"]
-
-            # Check if user already exists to avoid re-hashing/adding on every restart
-            try:
-                got_user = user_table.get_user_by_username(username)
-            except ValueError:
-                got_user = False
-
-            if not got_user:
-                user_table.add_user(username, password, role)
-                print(f"Added User: {username}")
-
-        print(f"Users added from {users_config_path}")
-    else:
-        print(f"Warning: {users_config_path} not found. No initial users loaded.")

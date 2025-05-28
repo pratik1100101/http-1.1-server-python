@@ -14,14 +14,15 @@ ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 
-def hash_password(password: str) -> bytes:
+def hash_password(password: str) -> str:
     # Function to securely hash passwords using `bcrypt` with some added salt.
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+    return hashed_password.decode("utf-8")
 
 
-def check_password(password: str, hashed_password: bytes) -> bool:
+def check_password(password: str, hashed_password: str) -> bool:
     # Function to verify a plaintext password against a hashed one.
-    return bcrypt.checkpw(password.encode("utf-8"), hashed_password)
+    return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def create_jwt_token(payload: dict) -> str:
