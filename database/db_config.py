@@ -24,11 +24,21 @@ Base = so.declarative_base()
 SessionLocal = so.sessionmaker(autoflush=False, bind=db)
 
 
+# The @contextmanager decorator allows us to use a generator function with the 'with' statement.
+# Normally, generator functions can't be used in 'with' blocks because their returned generator objects
+# don't implement the __enter__ and __exit__ dunders required by the context manager protocol in 'with'.
+# The 'with' statement essentially wraps code in a try/finally block for safe resource management:
+# __enter__() - sets up the resource (runs before the block)
+# __exit__() - tears it down (runs after the block, even if there's an exception)
 @contextmanager
 def start_db():
-    # Create a new session from the session facttory I mentioned above.
+    # Create a new session from the session factory I mentioned above.
     session = SessionLocal()
     try:
+        # Yield gives the session to the calling block of code and waits for it to exceute.
+        # Once it has finished executing the control resumes here and we move to the finally statement.
+        # If there is any exception in the code calling this, it is passed back here and we just
+        # close the session. The errors will be handled by the functions calling this.
         yield session
     finally:
         session.close()
