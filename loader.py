@@ -95,17 +95,25 @@ def load_routes(router: Router) -> None:
             continue
 
         # Here we are binding the arguments of the handler to itself by making it a Tuple
-        bound_handler = handler
-        # Checks if args is None or if it is anything else and binds it to the handler
-        if handler_args is not None:
-            # functools.partial() assigns the arguments to the handler function directly but doesn't call it.
-            if isinstance(handler_args, list):
-                bound_handler = functools.partial(handler, *handler_args)
-            elif isinstance(handler_args, dict):
-                bound_handler = functools.partial(handler, **handler_args)
-            else:
-                bound_handler = functools.partial(handler, handler_args)
+        bound_handler = bind_handler(handler, handler_args)
 
         router.add_route(method, path, bound_handler, protected=protected)
 
     print(f"Routes loaded from {routes_config_path}")
+
+
+# This returns a function that waits for the request object to be given in webserver and assigns the rest of
+# the handler args to the function.
+def bind_handler(handler, handler_args):
+    if handler_args is None:
+        return handler
+
+    def bound_handler(request):
+        if isinstance(handler_args, list):
+            return handler(request, *handler_args)
+        elif isinstance(handler_args, dict):
+            return handler(request, **handler_args)
+        else:
+            return handler(request, handler_args)
+
+    return bound_handler
