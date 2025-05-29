@@ -16,4 +16,4 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
     def __repr__(self):
-        return f"<User(id={self.id}, user_id='{self.username}', role='{self.role}')>"
+        return f"<User(id={self.id}, username='{self.username}', role='{self.role}')>"

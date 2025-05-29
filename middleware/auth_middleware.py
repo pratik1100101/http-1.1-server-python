@@ -45,7 +45,7 @@ def auth_middleware(next_handler: Callable) -> Callable:
             decoded_payload = jwt.decode(token, SECRET_KEY, ALGORITHM)
 
             request.user = decoded_payload
-            print(f"Authentication successful for user: {request.user.get('user_id')}")
+            print(f"Authentication successful for user: {request.user.get('username')}")
 
             return next_handler(request, **handler_args)
 

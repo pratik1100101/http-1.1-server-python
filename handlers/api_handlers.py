@@ -69,13 +69,13 @@ def post_data(request: Request):
             print(f"Authenticated user performing POST: {user_info}")
 
             received_data = json.loads(request.body.decode("utf-8"))
-            response_message = f"Received data from {user_info.get('user_id', 'unknown')}: {received_data}"
+            response_message = f"Received data from {user_info.get('username', 'unknown')}: {received_data}"
             return json_response(
                 200,
                 {
                     "status": "success",
                     "message": response_message,
-                    "received_by_user": user_info.get("user_id"),
+                    "received_by_user": user_info.get("username"),
                 },
             )
         except json.JSONDecodeError:

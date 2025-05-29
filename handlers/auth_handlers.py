@@ -58,13 +58,16 @@ def register_user(request: Request) -> Tuple[int, str, bytes]:
             user = create_user(
                 session, username=username, hashed_password=hashed_password, role="user"
             )
-            print(f"User '{user.user_id}' registered successfully with ID: {user.id}.")
+            print(f"User '{user.username}' registered successfully with ID: {user.id}.")
             return (
                 201,
                 "application/json",
                 # Ensure you are encoding the json objects to reutrn the correct response format.
                 json.dumps(
-                    {"message": "User registered successfully", "user_id": user.user_id}
+                    {
+                        "message": "User registered successfully",
+                        "username": user.username,
+                    }
                 ).encode("utf-8"),
             )
 
@@ -75,7 +78,7 @@ def register_user(request: Request) -> Tuple[int, str, bytes]:
     # Catch database unique constraint violations to ensure integrity.
     except IntegrityError:
         print(
-            f"Registration failed: Database integrity error, user_id might be duplicate."
+            f"Registration failed: Database integrity error, username might be duplicate."
         )
         return (
             409,
@@ -157,8 +160,6 @@ def get_user_profile(request: Request) -> Tuple[int, str, bytes]:
     # Check if the request object has all the data you need.
     if request.method != "GET":
         return 405, "text/plain", b"405 Method Not Allowed"
-    if not request.decoded_body:
-        return 400, "text/plain", b"400 Bad Requesr: Request body is empty."
 
     # The auth_middleware would have already populated request.user if the token is valid.
     # Adding this for type safety in the later request.user.get() calls
@@ -175,7 +176,7 @@ def get_user_profile(request: Request) -> Tuple[int, str, bytes]:
     # from sensitive payload (jwt).
     if not isinstance(username_from_token, str):
         print(
-            f"Profile access failed: 'user_id' missing or invalid in token payload for user: {username_from_token}"
+            f"Profile access failed: 'username' missing or invalid in token payload for user: {username_from_token}"
         )
         return (
             400,
