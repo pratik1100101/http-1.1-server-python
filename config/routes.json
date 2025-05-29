@@ -4,25 +4,19 @@
       "method": "GET",
       "path": "/",
       "handler": "serve_static_file",
-      "handler_args": {
-        "filepath": "index.html"
-      }
+      "handler_args": ["index.html"]
     },
     {
       "method": "GET",
       "path": "/style.css",
       "handler": "serve_static_file",
-      "handler_args": {
-        "filepath": "style.css"
-      }
+      "handler_args": ["style.css"]
     },
     {
       "method": "GET",
       "path": "/script.js",
       "handler": "serve_static_file",
-      "handler_args": {
-        "filepath": "script.js"
-      }
+      "handler_args": ["script.js"]
     },
     {
       "method": "GET",
@@ -35,9 +29,26 @@
       "handler": "post_data"
     },
     {
-      "method": "POST", 
+      "method": "POST",
+      "path": "/api/register",
+      "handler": "register_user"
+    },
+    {
+      "method": "POST",
       "path": "/api/login",
-      "handler": "login_handler"
+      "handler": "login_user"
+    },
+    {
+      "method": "GET",
+      "path": "/api/profile",
+      "handler": "get_user_profile",
+      "protected": true
+    },
+    {
+      "path": "/api/protected_data",
+      "method": "GET",
+      "handler": "get_data",
+      "protected": true
     }
   ]
 }
