@@ -121,23 +121,23 @@ class WebServer:
     ) -> None:
         #### NEED TO REDIFINE/COMMENT THIS ####
 
-        # Buffer specific to this client connection
+        # Buffer specific to this client connection.
         client_buffer = b""
-        # The timeout is a safeguard. It protects your server from hanging indefinitely
-        #  on misbehaving or slow clients.
+        # The timeout is a safeguard. It protects your server from waiting indefinitely
+        # on misbehaving or slow clients.
         client_sock.settimeout(10.0)
 
         try:
-            # Loop to handle multiple requests on a persistent connection
+            # Loop to handle multiple requests on a persistent connection.
             while True:
-                # This receives the client's complete request
+                # This receives the client's complete request.
                 parsed_components, consumed_bytes = self.parse_request_from_buffer(
                     client_buffer
                 )
 
                 if parsed_components:
-                    # If we enter here, we have a request that was successfully parsed
-                    # Hence we remove consumed bytes from buffer
+                    # If we enter here, we have a request that was successfully parsed.
+                    # Hence we remove consumed bytes from buffer.
                     client_buffer = client_buffer[consumed_bytes:]
 
                     request = Request(
@@ -151,14 +151,15 @@ class WebServer:
                         params=parsed_components.get("params"),
                     )
 
-                    # Checks if the requested path exists as a route in the app.
-                    handler_tuple = self.router.resolve_route(
+                    # We use get_route_info to get all route information.
+                    route_info = self.router.get_route_info(
                         request.method, request.path
                     )
 
-                    if handler_tuple:
-                        # Since .resolve_route() will return a (handler_function, handler_args) tuple
-                        final_handler, handler_args = handler_tuple
+                    if route_info:
+                        # Since .get_route_info() will return a dict with handler_function, handler_args, protected
+                        final_handler = route_info["handler"]
+                        is_protected = route_info.get("protected", False)
                     else:
                         # Returns if the a route is not found for the specific method and path.
                         self.send_response(
@@ -183,7 +184,7 @@ class WebServer:
                     try:
                         # We call all the nested functions and pass the handler_args as arbitrary keyword args
                         response_status, response_content_type, response_content = (
-                            wrapper_handler(request, **handler_args)
+                            wrapper_handler(request)
                         )
                         # Sends the response depending on what the nested function returns.
                         self.send_response(
