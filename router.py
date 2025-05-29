@@ -40,6 +40,8 @@ class Router:
         self, method: str, path: str
     ) -> Optional[Tuple[Optional[Callable], Optional[Dict[str, Any]]]]:
 
+        method = method.upper()
+
         route_info = self.routes.get(method, {}).get(path)
 
         if route_info:
