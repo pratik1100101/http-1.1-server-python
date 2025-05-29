@@ -10,7 +10,8 @@ class Router:
         # Routes are stored as:
         # self.routes = {
         #                "METHOD": {
-        #                           "path": (handler_function, handler_args),},}
+        #                           "path": {"handler": handler,"handler_args": handler_args,
+        #                                   "protected": protected,},},}
         self.routes = {}
 
     def add_route(
@@ -19,6 +20,7 @@ class Router:
         path: str,
         handler: Callable,
         handler_args: Optional[Dict[str, Any]] = None,
+        protected: bool = False,
     ) -> None:
 
         # Always process the HTTP methods with .upper() to ensure consistency
@@ -29,44 +31,24 @@ class Router:
             self.routes[method] = {}
 
         # Finally we create the handler and its arguments for the specific path and method
-        self.routes[method][path] = (
-            handler,
-            handler_args if handler_args is not None else {},
-        )
-        print(f"Route added: {method} {path}")
+        self.routes[method][path] = {
+            "handler": handler,
+            "handler_args": handler_args,
+            "protected": protected,
+        }
+        print(f"Route added: {method} {path} (Protected: {protected})")
 
-    def resolve_route(
+    # This method is used by the server to get the handler and its args.
+    def get_handler(
         self, method: str, path: str
-    ) -> Optional[Tuple[Callable, Dict[str, Any]]]:
+    ) -> Optional[Tuple[Optional[Callable], Optional[Dict[str, Any]]]]:
 
-        # The WebServer will call this method to check which handler to use
+        route_info = self.routes.get(method, {}).get(path)
 
-        # Always process the HTTP methods with .upper() to ensure consistency
-        method = method.upper()
+        if route_info:
+            return route_info["handler"], route_info["handler_args"]
+        return None, None
 
-        # A simple check if there is a handler for the incoming request with a spefcific method and path
-        if method in self.routes:
-            if path in self.routes[method]:
-                print(f"Route resolved: {method} {path}")
-                return self.routes[method][path]
-        print(f"No route found for: {method} {path}")
-        return None
-
-
-# If you don't want to implement the configuration file approach to routing you can use programmatic
-# routing approach below. I wanted to learn both ways hence I implemented both.
-####def route(self, method: str, path: str, **decorator_handler_args: Any) -> Callable:
-######### I wanted to implement the decorator way of implementing the routes though a decorator
-######### like we do in a flask app (@router.route('/', methods=['GET', 'POST'])), but have changed
-######### the order of the args to @router.route(methods, path) for consistency in the app
-
-########def decorator(handler: Callable) -> Callable:
-############# When the decorator is applied, this inner function gets the handler.
-############# We then call the add_route method to register it.
-
-############self.add_route(method, path, handler, decorator_handler_args)
-
-############# We return the original handler
-############return handler
-
-########return decorator
+    # This method is used by the auth_middleware to check protection status
+    def get_route_info(self, method: str, path: str) -> Optional[Dict[str, Any]]:
+        return self.routes.get(method, {}).get(path)
