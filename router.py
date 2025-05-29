@@ -10,8 +10,7 @@ class Router:
         # Routes are stored as:
         # self.routes = {
         #                "METHOD": {
-        #                           "path": {"handler": handler,"handler_args": handler_args,
-        #                                   "protected": protected,},},}
+        #                           "path": {"handler": handler,"handler_args": handler_args,},},}
         self.routes = {}
 
     def add_route(
@@ -20,7 +19,6 @@ class Router:
         path: str,
         handler: Callable,
         handler_args: Optional[Dict[str, Any]] = None,
-        protected: bool = False,
     ) -> None:
 
         # Always process the HTTP methods with .upper() to ensure consistency
@@ -34,9 +32,8 @@ class Router:
         self.routes[method][path] = {
             "handler": handler,
             "handler_args": handler_args,
-            "protected": protected,
         }
-        print(f"Route added: {method} {path} (Protected: {protected})")
+        print(f"Route added: {method} {path}")
 
     # This method is used by the server to get the handler and its args.
     def get_handler(

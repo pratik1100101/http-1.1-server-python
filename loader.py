@@ -79,7 +79,6 @@ def load_routes(router: Router) -> None:
         path = route_entry.get("path")
         handler_name = route_entry.get("handler")
         handler_args = route_entry.get("handler_args")
-        protected = route_entry.get("protected", False)
 
         # Ensures that we have the basic arguments that we need if a route is called.
         if not all([method, path, handler_name]):
@@ -97,7 +96,7 @@ def load_routes(router: Router) -> None:
         # Here we are binding the arguments of the handler to itself by making it a Tuple
         bound_handler = bind_handler(handler, handler_args)
 
-        router.add_route(method, path, bound_handler, protected=protected)
+        router.add_route(method, path, bound_handler)
 
     print(f"Routes loaded from {routes_config_path}")
 

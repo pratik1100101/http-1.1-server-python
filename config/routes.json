@@ -41,14 +41,12 @@
     {
       "method": "GET",
       "path": "/api/profile",
-      "handler": "get_user_profile",
-      "protected": true
+      "handler": "get_user_profile"
     },
     {
       "path": "/api/protected_data",
       "method": "GET",
-      "handler": "get_data",
-      "protected": true
+      "handler": "get_data"
     }
   ]
 }

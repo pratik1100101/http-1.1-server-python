@@ -157,9 +157,8 @@ class WebServer:
                     )
 
                     if route_info:
-                        # Since .get_route_info() will return a dict with handler_function, handler_args, protected
+                        # Since .get_route_info() will return a dict with handler_function, handler_args
                         final_handler = route_info["handler"]
-                        is_protected = route_info.get("protected", False)
                     else:
                         # Returns if the a route is not found for the specific method and path.
                         self.send_response(
