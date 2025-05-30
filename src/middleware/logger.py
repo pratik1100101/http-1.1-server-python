@@ -1,8 +1,7 @@
 import datetime
 import time
 from typing import Any, Callable, Dict, Tuple
-
-from webserver import Request
+from src.webserver import Request
 
 
 def logger_middleware(handler_function: Callable) -> Callable:

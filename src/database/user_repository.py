@@ -1,7 +1,6 @@
 from typing import List, Optional
-
-from database.models import User
 import sqlalchemy.orm as so
+from src.database.models import User
 
 
 def get_user_by_username(session: so.Session, username: str) -> Optional[User]:

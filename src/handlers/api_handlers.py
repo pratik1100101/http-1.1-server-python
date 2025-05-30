@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
-from decorators import protected_route
-from webserver import Request
 import json
+from src.decorators import protected_route
+from src.webserver import Request
 
 
 def json_response(

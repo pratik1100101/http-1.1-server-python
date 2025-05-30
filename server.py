@@ -1,14 +1,11 @@
 import os
-
 from dotenv import load_dotenv
-from database.init_db import init_db
-from middleware.auth_middleware import auth_middleware
-from loader import load_routes
-from webserver import WebServer
-from router import Router
-from handlers.static_handlers import serve_static_file
-from handlers.api_handlers import get_data, post_data
-from middleware.logger import logger_middleware
+from src.database.init_db import init_db
+from src.loader import load_routes
+from src.middleware.auth_middleware import auth_middleware
+from src.middleware.logger import logger_middleware
+from src.router import Router
+from src.webserver import WebServer
 
 # from database.db_connection import get_db_connection
 load_dotenv()

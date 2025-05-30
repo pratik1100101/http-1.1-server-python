@@ -1,6 +1,6 @@
 import mimetypes
 import os
-from webserver import Request
+from src.webserver import Request
 
 
 def _get_content_type(file_path: str) -> str:

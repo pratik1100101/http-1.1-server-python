@@ -2,7 +2,7 @@ from contextlib import contextmanager
 import os
 from dotenv import load_dotenv
 import sqlalchemy as sa
-from sqlalchemy import orm as so, text
+from sqlalchemy import orm as so
 import psycopg2
 
 

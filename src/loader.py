@@ -1,8 +1,7 @@
-import functools
 import importlib
 import json
 import os
-from router import Router
+from src.router import Router
 
 
 def load_routes(router: Router) -> None:
@@ -48,14 +47,14 @@ def load_routes(router: Router) -> None:
     # We will look up the handlers by importing their module.
     # This allows us to list handler functions by name in the config.
     try:
-        static_handlers_module = importlib.import_module("handlers.static_handlers")
+        static_handlers_module = importlib.import_module("src.handlers.static_handlers")
         handler_map["serve_static_file"] = static_handlers_module.serve_static_file
 
-        api_handlers_module = importlib.import_module("handlers.api_handlers")
+        api_handlers_module = importlib.import_module("src.handlers.api_handlers")
         handler_map["get_data"] = api_handlers_module.get_data
         handler_map["post_data"] = api_handlers_module.post_data
 
-        auth_handlers_module = importlib.import_module("handlers.auth_handlers")
+        auth_handlers_module = importlib.import_module("src.handlers.auth_handlers")
         handler_map["register_user"] = auth_handlers_module.register_user
         handler_map["login_user"] = auth_handlers_module.login_user
         handler_map["get_user_profile"] = auth_handlers_module.get_user_profile

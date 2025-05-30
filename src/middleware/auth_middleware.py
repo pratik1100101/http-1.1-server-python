@@ -2,8 +2,8 @@ import os
 from typing import Any, Callable, Tuple
 from dotenv import load_dotenv
 import jwt
+from src.webserver import Request
 
-from webserver import Request
 
 load_dotenv(dotenv_path="../.env")
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")

@@ -1,9 +1,6 @@
-# This file will contain helper functions for all cryptographic and JWT-related operations:
-
 from datetime import datetime, timedelta, timezone
 import os
 from typing import Optional
-
 import bcrypt
 from dotenv import load_dotenv
 import jwt

@@ -1,7 +1,6 @@
-from database.user_repository import create_user, get_user_by_username
-from database.db_config import Base, SessionLocal, db
-
-from utils.auth_utils import hash_password
+from src.database.db_config import Base, db, SessionLocal
+from src.database.user_repository import create_user, get_user_by_username
+from src.utils.auth_utils import hash_password
 
 
 def init_db():

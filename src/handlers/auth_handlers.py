@@ -1,12 +1,11 @@
 import json
 from typing import Tuple
-
 from psycopg2 import IntegrityError
-from database.user_repository import create_user, get_user_by_username
-from database.db_config import start_db
-from decorators import protected_route
-from utils.auth_utils import check_password, create_jwt_token, hash_password
-from webserver import Request
+from src.database.db_config import start_db
+from src.database.user_repository import create_user, get_user_by_username
+from src.decorators import protected_route
+from src.utils.auth_utils import check_password, create_jwt_token, hash_password
+from src.webserver import Request
 
 
 def register_user(request: Request) -> Tuple[int, str, bytes]:
