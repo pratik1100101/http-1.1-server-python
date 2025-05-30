@@ -50,4 +50,5 @@ class Router:
 
     # This method is used by the auth_middleware to check protection status
     def get_route_info(self, method: str, path: str) -> Optional[Dict[str, Any]]:
+        method = method.upper()
         return self.routes.get(method, {}).get(path)
