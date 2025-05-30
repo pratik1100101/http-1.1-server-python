@@ -10,7 +10,7 @@ class Router:
         # Routes are stored as:
         # self.routes = {
         #                "METHOD": {
-        #                           "path": {"handler": handler,"handler_args": handler_args,},},}
+        #                           "path": {"handler": handler, "handler_args": handler_args,},},}
         self.routes = {}
 
     def add_route(

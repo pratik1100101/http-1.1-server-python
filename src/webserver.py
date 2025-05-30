@@ -2,7 +2,6 @@ import socket
 import threading
 from typing import Any, Callable, Tuple, Dict, Optional
 import os
-
 import urllib
 import urllib.parse
 from src.router import Router
@@ -266,8 +265,6 @@ class WebServer:
         query_params_raw = urllib.parse.parse_qs(
             parsed_url.query, keep_blank_values=True, encoding="utf-8"
         )
-
-        print(decoded_path)
 
         # The values in query_params_raw are lists (e.g., {'q': ['search_term']}).
         # Often, if you expect single values, you might want to extract them.
