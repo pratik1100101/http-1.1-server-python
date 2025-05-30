@@ -2,6 +2,9 @@ import socket
 import threading
 from typing import Any, Callable, Tuple, Dict, Optional
 import os
+
+import urllib
+import urllib.parse
 from src.router import Router
 
 
@@ -12,7 +15,7 @@ class Request:
         path: str,
         version: str,
         headers: Dict[str, str],
-        body_bytes: bytes,
+        body: bytes,
         web_root_dir: str,
         decoded_body: Optional[str] = None,
         params: Optional[Dict[str, str]] = None,
@@ -23,7 +26,7 @@ class Request:
         self.path = path
         self.version = version
         self.headers = headers if headers is not None else {}
-        self.body = body_bytes if body_bytes is not None else b""
+        self.body = body if body is not None else b""
         self.web_root_dir = web_root_dir
         self.decoded_body = decoded_body
         self.params = params if params is not None else {}
@@ -52,6 +55,16 @@ class WebServer:
 
     # Max request size in bytes.
     MAX_BUFFER_SIZE = 1024 * 1024 * 10  # 10 MB
+
+    SUPPORTED_HTTP_METHODS = {
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "HEAD",
+        "OPTIONS",
+        "PATCH",
+    }
 
     def __init__(self, host: str, port: str, web_root_dir: str, router: Router) -> None:
         # Initialize the server with the host, port, and web root directory.
@@ -115,10 +128,208 @@ class WebServer:
             server_socket.close()
             print("Server socket closed.")
 
+    def parse_request_from_buffer(
+        self, buffer: bytes
+    ) -> Tuple[Optional[Dict[str, Any]], int]:
+
+        # Find the end of the headers section (double CRLF)
+        header_end_index = buffer.find(b"\r\n\r\n")
+
+        if header_end_index == -1:
+            # Headers not fully received yet
+            return None, 0
+
+        # Extract header bytes (including the double CRLF)
+        header_section_bytes = buffer[: header_end_index + 4]
+
+        try:
+            # Decode the bytes to a string.
+            header_string = header_section_bytes.decode("utf-8")
+
+            print(
+                f"--- Request received ---\n{header_string.strip()}\n--- End of Request ---"
+            )
+
+            # Split by CRLF (\r\n) to get individual lines of the request.
+            request_lines = header_string.split("\r\n")
+
+            if not request_lines or not request_lines[0]:
+                # If the first line is empty, we have a malformed request.
+                raise ValueError("Empty request line")
+
+            # The first line of the request contains the method, path, and HTTP version.
+            first_line_parts = request_lines[0].strip().split(" ")
+
+            if len(first_line_parts) != 3:
+                # If there are not enough parts, we have a malformed request.
+                raise ValueError("Malformed request line")
+            # Extract all the components of the first line.
+            method = first_line_parts[0].upper()
+            path_with_query = first_line_parts[1]
+            version = first_line_parts[2]
+
+            path, params = self.parse_url_path_and_query(path_with_query)
+
+            if method not in self.SUPPORTED_HTTP_METHODS:
+                raise ValueError(f"Unsupported HTTP method: '{method}'")
+
+            if not path_with_query.startswith("/"):
+                raise ValueError(f"Malformed path: Path must start with '/'")
+
+            if version != "HTTP/1.1":
+                # If the request is in a older/newer HTTP version, we have a malformed request.
+                raise ValueError("Invalid HTTP version")
+
+            # Extract all the other headers.
+            headers = {}
+
+            for i, line in enumerate(request_lines[1:]):
+                if not line.strip():
+                    # This checks for an empty line which signals the end of the headers.
+                    break
+
+                if ":" in line:
+                    # Identifies the header lines by ":" and splits the string from the 1st ":".
+                    header_name, header_val = line.split(":", 1)
+                    headers[header_name.strip()] = header_val.strip()
+                else:
+                    # Malformed header line, could indicate a bad request
+                    raise ValueError(f"Malformed header line: '{line.strip()}'")
+
+            # Parsing the request body for POST, PUT, PATCH methods.
+            body = b""
+            # Get Content-Length header value, case-insensitive and safe.
+            content_length_str = headers.get("Content-Length") or headers.get(
+                "content-length"
+            )
+            content_length = 0
+
+            if content_length_str:
+                try:
+                    # Converting str to int.
+                    content_length = int(content_length_str)
+                    if content_length < 0:
+                        raise ValueError("Negative Content-Length not allowed.")
+                except ValueError:
+                    raise ValueError("Invalid Content-Length header.")
+
+            # We check if the entire body has been received
+            body_start_offset = header_end_index + 4
+            if len(buffer) < body_start_offset + content_length:
+                # We ask the client to get more data
+                return None, 0
+
+            # We read the request body only if the header+body length < buffer.
+            body = buffer[body_start_offset : body_start_offset + content_length]
+            # Gives a ending point that we can use in the buffer to seperate requests
+            bytes_consumed = body_start_offset + content_length
+
+            # We define "decoded_request_body" outside since there might be requests without any body.
+            decoded_body = None
+            if body:
+                try:
+                    decoded_body = body.decode("utf-8")
+                    print(f"Request Body: {decoded_body}")
+                except UnicodeDecodeError:
+                    # If body cannot be decoded as UTF-8, leave as None since it can be other form of data.
+                    decoded_body = None
+
+            return {
+                "method": method,
+                "path": path,
+                "version": version,
+                "headers": headers,
+                "body": body,
+                "decoded_body": decoded_body,
+                "params": params,
+            }, bytes_consumed
+
+        except ValueError as e:
+            # Catch specific parsing syntax errors and re-raise them as bad requests
+            raise ValueError(f"400 Bad Request: {e}")
+        except Exception as e:
+            # Catch any unexpected errors during parsing (e.g., list index out of bounds)
+            raise ValueError(f"500 Internal Server Error during parsing: {e}")
+
+    def parse_url_path_and_query(
+        self,
+        path_with_query_str: str,
+    ) -> Tuple[str, Dict[str, Any]]:
+
+        # Here we use the urllib to parse the string into path and params
+        parsed_url = urllib.parse.urlsplit(path_with_query_str)
+
+        # We extract the path from the parsed_url
+        decoded_path = urllib.parse.unquote(parsed_url.path)
+
+        # Parse the query string into a dictionary
+        query_params_raw = urllib.parse.parse_qs(
+            parsed_url.query, keep_blank_values=True, encoding="utf-8"
+        )
+
+        print(decoded_path)
+
+        # The values in query_params_raw are lists (e.g., {'q': ['search_term']}).
+        # Often, if you expect single values, you might want to extract them.
+        query_params = {}
+        for key, values in query_params_raw.items():
+            if len(values) == 1:
+                query_params[key] = values[0]  # Take the single value
+            else:
+                query_params[key] = values  # Keep as list for multiple values
+
+        return decoded_path, query_params
+
+    def send_response(
+        self,
+        client_sock: socket.socket,
+        status_code: int,
+        content_type: str,
+        content: bytes,
+    ) -> None:
+        # Logic to build and send the HTTP response.
+
+        # We look up the status code message in the STATUS_LINE dict in the class.
+        status_message = self.STATUS_LINES.get(status_code, "Unknown Status")
+
+        # Here we create the first line of response
+        response_line = f"HTTP/1.1 {status_code} {status_message}\r\n"
+
+        # Next we make the headers in form of a dict so that it is easy to handle.
+        # The connection is set to keep-alive for success, close for errors
+        headers = {
+            "Content-Type": content_type,
+            "Content-Length": len(content),
+            "Connection": "keep-alive" if status_code == 200 else "close",
+        }
+        # Combine the headers and make it into a str.
+        header_lines = ""
+        for name, value in headers.items():
+            header_lines += f"{name}: {value}\r\n"
+
+        # Add an empty line to signal the end of the header.
+        header_lines += "\r\n"
+
+        # Combine the first line, headers and content, while we encode it.
+        full_response_bytes = (
+            response_line.encode("utf-8") + header_lines.encode("utf-8") + content
+        )
+
+        try:
+            # Sending the response to the client.
+            client_sock.sendall(full_response_bytes)
+            print(
+                f"Sent response with status {status_code} and {len(content)} bytes of content to {client_sock.getpeername()}"
+            )
+        except Exception as e:
+            # Catches any unknown errors.
+            print(f"Error sending response to {client_sock.getpeername()}: {e}")
+
     def handle_client(
         self, client_sock: socket.socket, client_addr: Tuple[str, int]
     ) -> None:
-        #### NEED TO REDIFINE/COMMENT THIS ####
+
+        # Handles a single client connection by receiving request, processing it, and sends a response.
 
         # Buffer specific to this client connection.
         client_buffer = b""
@@ -144,7 +355,7 @@ class WebServer:
                         path=parsed_components["path"],
                         version=parsed_components["version"],
                         headers=parsed_components["headers"],
-                        body_bytes=parsed_components["body_bytes"],
+                        body=parsed_components["body"],
                         web_root_dir=self.web_root_dir,
                         decoded_body=parsed_components["decoded_body"],
                         params=parsed_components.get("params"),
@@ -211,6 +422,7 @@ class WebServer:
                             b"500 Internal Server Error: Handler error.",
                         )
                         break
+                    # To ensure that we have the persistent connection open
                     continue
                 else:
                     # There might be a case where there is an incomplete request in buffer.
@@ -250,170 +462,3 @@ class WebServer:
             # Ensure the client socket is closed.
             print(f"Connection closed for {client_sock.getpeername()}")
             client_sock.close()
-
-    def parse_request_from_buffer(
-        self, buffer: bytes
-    ) -> Tuple[Optional[Dict[str, Any]], int]:
-
-        # Find the end of the headers section (double CRLF)
-        header_end_index = buffer.find(b"\r\n\r\n")
-
-        if header_end_index == -1:
-            # Headers not fully received yet
-            return None, 0
-
-        # Extract header bytes (including the double CRLF)
-        header_section_bytes = buffer[: header_end_index + 4]
-
-        try:
-            # Decode the bytes to a string.
-            header_string = header_section_bytes.decode("utf-8")
-
-            print(
-                f"--- Request received ---\n{header_string.strip()}\n--- End of Request ---"
-            )
-
-            # Split by CRLF (\r\n) to get individual lines of the request.
-            request_lines = header_string.split("\r\n")
-
-            if not request_lines or not request_lines[0]:
-                # If the first line is empty, we have a malformed request.
-                raise ValueError("400 Bad Request: Empty request line")
-
-            # The first line of the request contains the method, path, and HTTP version.
-            first_line_parts = request_lines[0].strip().split(" ")
-
-            if len(first_line_parts) < 3:
-                # If there are not enough parts, we have a malformed request.
-                raise ValueError("400 Bad Request: Malformed request line")
-
-            # Extract all the components of the first line.
-            method = first_line_parts[0].upper()
-            path_with_query = first_line_parts[1]
-            version = first_line_parts[2]
-
-            # Extract all the other headers.
-            headers = {}
-
-            for i, line in enumerate(request_lines[1:]):
-                if not line.strip():
-                    # This checks for an empty line which signals the end of the headers.
-                    break
-
-                if ":" in line:
-                    # Identifies the header lines by ":" and splits the string from the 1st ":".
-                    header_name, header_val = line.split(":", 1)
-                    headers[header_name.strip()] = header_val.strip()
-                else:
-                    # Malformed header line, could indicate a bad request
-                    raise ValueError(
-                        f"400 Bad Request: Malformed header line: '{line.strip()}'"
-                    )
-
-            # Parsing the request body for POST, PUT, PATCH methods.
-            body_bytes = b""
-            # Get Content-Length header value, case-insensitive and safe.
-            content_length_str = headers.get("Content-Length") or headers.get(
-                "content-length"
-            )
-            content_length = 0
-
-            if content_length_str:
-                try:
-                    # Converting str to int.
-                    content_length = int(content_length_str)
-                    if content_length < 0:
-                        raise ValueError(
-                            "400 Bad Request: Negative Content-Length not allowed."
-                        )
-                except ValueError:
-                    raise ValueError("400 Bad Request: Invalid Content-Length header.")
-
-            # We check if the entire body has been received
-            body_start_offset = header_end_index + 4
-            if len(buffer) < body_start_offset + content_length:
-                # We ask the client to get more data
-                return None, 0
-
-            # We read the request body only if the header+body length < buffer.
-            body_bytes = buffer[body_start_offset : body_start_offset + content_length]
-            # Gives a ending point that we can use in the buffer to seperate requests
-            bytes_consumed = body_start_offset + content_length
-
-            # We define "decoded_request_body" outside since there might be requests without any body.
-            decoded_body = None
-            if body_bytes:
-                try:
-                    decoded_body = body_bytes.decode("utf-8")
-                    print(f"Request Body: {decoded_body}")
-                except UnicodeDecodeError:
-                    # If body cannot be decoded as UTF-8, leave as None since it can be other form of data.
-                    decoded_body = None
-
-            path = path_with_query
-            params: Optional[Dict[str, str]] = None
-            if "?" in path_with_query:
-                path, query_string = path_with_query.split("?", 1)
-                params = dict(param.split("=", 1) for param in query_string.split("&"))
-
-            return {
-                "method": method,
-                "path": path,
-                "version": version,
-                "headers": headers,
-                "body_bytes": body_bytes,
-                "decoded_body": decoded_body,
-                "params": params,
-            }, bytes_consumed
-
-        except ValueError as e:
-            # Catch specific parsing syntax errors and re-raise them as bad requests
-            raise ValueError(f"400 Bad Request: {e}")
-        except Exception as e:
-            # Catch any unexpected errors during parsing (e.g., list index out of bounds)
-            raise ValueError(f"500 Internal Server Error during parsing: {e}")
-
-    def send_response(
-        self,
-        client_sock: socket.socket,
-        status_code: int,
-        content_type: str,
-        content: bytes,
-    ) -> None:
-        # Logic to build and send the HTTP response.
-
-        # We look up the status code message in the STATUS_LINE dict in the class.
-        status_message = self.STATUS_LINES.get(status_code, "Unknown Status")
-
-        # Here we create the first line of response
-        response_line = f"HTTP/1.1 {status_code} {status_message}\r\n"
-
-        # Next we make the headers in form of a dict so that it is easy to handle.
-        # The connection is set to keep-alive for success, close for errors
-        headers = {
-            "Content-Type": content_type,
-            "Content-Length": len(content),
-            "Connection": "keep-alive" if status_code == 200 else "close",
-        }
-        # Combine the headers and make it into a str.
-        header_lines = ""
-        for name, value in headers.items():
-            header_lines += f"{name}: {value}\r\n"
-
-        # Add an empty line to signal the end of the header.
-        header_lines += "\r\n"
-
-        # Combine the first line, headers and content, while we encode it.
-        full_response_bytes = (
-            response_line.encode("utf-8") + header_lines.encode("utf-8") + content
-        )
-
-        try:
-            # Sending the response to the client.
-            client_sock.sendall(full_response_bytes)
-            print(
-                f"Sent response with status {status_code} and {len(content)} bytes of content to {client_sock.getpeername()}"
-            )
-        except Exception as e:
-            # Catches any unknown errors.
-            print(f"Error sending response to {client_sock.getpeername()}: {e}")
