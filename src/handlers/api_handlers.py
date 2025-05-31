@@ -4,17 +4,10 @@ from src.decorators import protected_route
 from src.webserver import Request
 
 
-def json_response(
-    status_code: int, data: dict, headers: Optional[dict] = None
-) -> Tuple[int, str, bytes]:
-    # Util to create json responses
-
-    # Initialize an empty dict if no custom headers are provided
-    # headers is provided here so that we can handle any customer headers later
-    if headers is None:
-        headers = {}
-
+def json_response(status_code: int, data: dict) -> Tuple[int, str, bytes]:
+    # Util to create json responses for the response body.
     try:
+        # Create the JSON string and encode it to be added to the response.
         response_body = json.dumps(data).encode("utf-8")
         content_type = "application/json"
         return status_code, content_type, response_body
@@ -31,6 +24,7 @@ def json_response(
 @protected_route
 def get_data(request: Request) -> Tuple[int, str, bytes]:
     # Handler for GET /api/data. Returns some sample JSON data.
+    # This is just a mock method that shows how data will be accessed and sent back.
     try:
         print(f"Handling GET request for /api/data. Request headers: {request.headers}")
 
@@ -57,7 +51,8 @@ def get_data(request: Request) -> Tuple[int, str, bytes]:
 @protected_route
 def post_data(request: Request):
     # Handler for POST /api/data. Processes incoming JSON data.
-
+    # This is just a mock method that shows how data will be accessed and posted.
+    # I have not implemented any database operations that will take data from here.
     print(f"Handling POST request for /api/data. Request body: {request.body}")
     if request.body:
         try:
