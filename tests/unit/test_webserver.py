@@ -5,7 +5,7 @@ from src.router import Router
 from src.webserver import Request, WebServer
 
 
-class TestWebserver:
+class TestWebServer:
     @pytest.fixture
     def web_server_instance(self, mocker):
         # Mock WebServer.__init__ dependencies for WebServer.
@@ -23,8 +23,9 @@ class TestWebserver:
             router=mock_router,
         )
 
-        # Return the created WebServer instance.
-        return server
+        # Returns the created WebServer instance.
+        # yield will clean up the instance created here to avoid any issues.
+        yield server
 
     @pytest.fixture
     def mock_client_socket(self, mocker):
@@ -33,7 +34,8 @@ class TestWebserver:
         mock_socket.sendall = mocker.MagicMock()
         # Mocks peername for logging.
         mock_socket.getpeername.return_value = ("127.0.0.1", 12345)
-        return mock_socket
+        # yield will clean up the instance created here to avoid any issues.
+        yield mock_socket
 
     #### REQUEST OBJECT TESTS. ####
     # Test basic initialization with all required arguments.
