@@ -11,8 +11,6 @@ def json_response(status_code: int, data: dict) -> Tuple[int, str, bytes]:
         response_body = json.dumps(data).encode("utf-8")
         content_type = "application/json"
         return status_code, content_type, response_body
-    except json.JSONDecodeError:
-        return 500, "text/plain", b"500 Internal Server Error: JSON encoding failed."
     except Exception as e:
         return (
             500,
