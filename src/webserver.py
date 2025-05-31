@@ -1,3 +1,4 @@
+import datetime
 import socket
 import threading
 from typing import Any, Callable, Tuple, Dict, Optional
@@ -298,6 +299,8 @@ class WebServer:
             "Content-Type": content_type,
             "Content-Length": len(content),
             "Connection": "keep-alive" if status_code == 200 else "close",
+            "Date": datetime.datetime.today().date(),
+            "Server": "Pratik's HTTP Server",
         }
         # Combine the headers and make it into a str.
         header_lines = ""

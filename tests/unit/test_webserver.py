@@ -1,3 +1,4 @@
+import datetime
 import socket
 import threading
 import pytest
@@ -746,6 +747,8 @@ class TestWebServer:
         assert (
             "Connection: keep-alive\r\n" in sent_string
         )  # 200 OK should be keep-alive
+        assert f"Date: {datetime.datetime.today().date()}" in sent_string
+        assert "Server: Pratik's HTTP Server" in sent_string
         assert "\r\n\r\n" in sent_string  # End of headers
 
         # Verify that the content was sent with the response.
@@ -772,6 +775,8 @@ class TestWebServer:
         assert f"Content-Length: {len(content)}\r\n" in sent_string
         # Since we encountered an error the connection should be closed.
         assert "Connection: close\r\n" in sent_string
+        assert f"Date: {datetime.datetime.today().date()}" in sent_string
+        assert "Server: Pratik's HTTP Server" in sent_string
         assert sent_bytes.endswith(content)
 
     # Test sending a 204 No Content response with an empty body.
@@ -798,6 +803,8 @@ class TestWebServer:
         assert "Content-Type: text/plain\r\n" in sent_string
         assert "Content-Length: 0\r\n" in sent_string
         assert "Connection: keep-alive\r\n" in sent_string
+        assert f"Date: {datetime.datetime.today().date()}" in sent_string
+        assert "Server: Pratik's HTTP Server" in sent_string
         assert sent_bytes.endswith(b"\r\n\r\n")
 
     # Test sending a response with a different content type like JSON.
@@ -817,6 +824,11 @@ class TestWebServer:
         sent_string = sent_bytes.decode("utf-8")
 
         assert "Content-Type: application/json\r\n" in sent_string
+        assert f"Content-Length: {len(content)}\r\n" in sent_string
+        assert "Connection: keep-alive\r\n" in sent_string
+        assert f"Date: {datetime.datetime.today().date()}" in sent_string
+        assert "Server: Pratik's HTTP Server" in sent_string
+        assert "\r\n\r\n" in sent_string
         assert sent_bytes.endswith(content)
 
     # Test error handling when sendall fails.
