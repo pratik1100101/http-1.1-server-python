@@ -24,12 +24,18 @@ def load_routes(router: Router) -> None:
         return
     # Catch any other unexpected errors during file reading.
     except Exception as e:
-        print(f"Error: 'routes' key in config must be a list.")
+        print(f"Error: {e}")
         return
 
-    routes_list = config.get("routes", [])
+    if "routes" not in config:
+        print(
+            f"Error: Missing 'routes' key in routes configuration file at {routes_config_path}"
+        )
+        return
+
+    routes_list = config["routes"]
     if not isinstance(routes_list, list):
-        print(f"Error: 'routes' key  in config must be list")
+        print(f"Error: 'routes' key in config must be list")
         return
 
     # Define a mapping from handler name so that we can map it to the actual function.
