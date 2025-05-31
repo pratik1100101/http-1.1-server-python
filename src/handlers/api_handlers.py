@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Tuple
 import json
 from src.decorators import protected_route
 from src.webserver import Request
