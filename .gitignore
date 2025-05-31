@@ -6,3 +6,5 @@ __pycache__/
 *.pyd
 .vscode/
 .idea/
+check_builtins.py
+temp_open_test.py
